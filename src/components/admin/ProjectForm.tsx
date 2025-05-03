@@ -14,23 +14,35 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { X, Plus } from "lucide-react";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { X, Plus, Upload, Image } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/components/ui/use-toast";
 
 const ProjectForm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { projects, addProject, updateProject } = useProjects();
+  const { toast } = useToast();
   
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     technologies: [""],
-    images: ["", ""],
+    images: [""],
     downloadLink: "",
     featured: false,
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<Record<number, number>>({});
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -113,13 +125,75 @@ const ProjectForm = () => {
     }));
   };
 
+  const handleFileUpload = async (index: number, file: File) => {
+    if (!file) return;
+    
+    try {
+      setIsUploading(true);
+      
+      // Create a unique file name
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+      
+      // Upload file to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('project_images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+          onUploadProgress: (progress) => {
+            setUploadProgress(prev => ({
+              ...prev,
+              [index]: Math.round((progress.loaded / progress.total) * 100)
+            }));
+          }
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('project_images')
+        .getPublicUrl(filePath);
+      
+      // Update image URL in form data
+      handleImageChange(index, publicUrl);
+      
+      toast({
+        title: "Upload successful",
+        description: "Image has been uploaded successfully",
+      });
+      
+    } catch (error: any) {
+      console.error('Error uploading file:', error);
+      toast({
+        title: "Upload failed",
+        description: error.message || "Failed to upload image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(prev => ({
+        ...prev,
+        [index]: 0
+      }));
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
 
     // Validate form
     if (!formData.name || !formData.description || !formData.downloadLink) {
-      alert("Please fill out all required fields");
+      toast({
+        title: "Error",
+        description: "Please fill out all required fields",
+        variant: "destructive",
+      });
       setIsSubmitting(false);
       return;
     }
@@ -131,7 +205,11 @@ const ProjectForm = () => {
     const filteredImages = formData.images.filter(img => img.trim() !== "");
     
     if (filteredImages.length === 0) {
-      alert("Please add at least one image");
+      toast({
+        title: "Error",
+        description: "Please add at least one image",
+        variant: "destructive",
+      });
       setIsSubmitting(false);
       return;
     }
@@ -152,7 +230,11 @@ const ProjectForm = () => {
       navigate("/admin/dashboard/projects");
     } catch (error) {
       console.error("Error saving project:", error);
-      alert("An error occurred while saving the project");
+      toast({
+        title: "Error",
+        description: "An error occurred while saving the project",
+        variant: "destructive",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -251,28 +333,81 @@ const ProjectForm = () => {
               </div>
               
               {formData.images.map((img, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    value={img}
-                    onChange={(e) => handleImageChange(index, e.target.value)}
-                    placeholder="Image URL (e.g., /placeholder.svg)"
-                    className="flex-1"
-                  />
-                  {formData.images.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleRemoveImage(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                <div key={index} className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={img}
+                      onChange={(e) => handleImageChange(index, e.target.value)}
+                      placeholder="Image URL"
+                      className="flex-1"
+                    />
+                    
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button type="button" variant="outline" size="icon" className="shrink-0">
+                          <Upload className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Upload Image</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-gray-300 rounded-lg">
+                          <Image className="h-10 w-10 text-gray-400 mb-4" />
+                          <p className="text-sm text-gray-500 mb-2">Click to select or drag and drop</p>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                handleFileUpload(index, file);
+                              }
+                            }}
+                          />
+                          {uploadProgress[index] > 0 && uploadProgress[index] < 100 && (
+                            <div className="w-full mt-4">
+                              <div className="bg-gray-200 rounded-full h-2.5">
+                                <div 
+                                  className="bg-blue-600 h-2.5 rounded-full" 
+                                  style={{width: `${uploadProgress[index]}%`}}
+                                ></div>
+                              </div>
+                              <p className="text-xs text-center mt-1">{uploadProgress[index]}%</p>
+                            </div>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    
+                    {formData.images.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveImage(index)}
+                        className="shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  
+                  {img && (
+                    <div className="relative h-32 w-full overflow-hidden rounded border border-gray-200">
+                      <img 
+                        src={img} 
+                        alt={`Preview ${index + 1}`}
+                        className="h-full w-full object-cover object-center"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/placeholder.svg";
+                        }}
+                      />
+                    </div>
                   )}
                 </div>
               ))}
-              <p className="text-sm text-gray-500">
-                For demo purposes, you can use "/placeholder.svg" for images
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -303,7 +438,10 @@ const ProjectForm = () => {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              disabled={isSubmitting || isUploading}
+            >
               {isSubmitting
                 ? "Saving..."
                 : id

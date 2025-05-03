@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Mail, Phone, MapPin } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 const Contact = () => {
   const { addMessage } = useProjects();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -29,7 +31,11 @@ const Contact = () => {
     
     // Validate form
     if (!formData.name || !formData.email || !formData.message) {
-      alert("Please fill out all fields");
+      toast({
+        title: "Error",
+        description: "Please fill out all fields",
+        variant: "destructive",
+      });
       setIsSubmitting(false);
       return;
     }
@@ -71,8 +77,8 @@ const Contact = () => {
               </div>
               <div>
                 <h3 className="font-bold text-lg">Email</h3>
-                <p className="text-gray-600">contact@mohamedroshdy.com</p>
-                <a href="mailto:contact@mohamedroshdy.com" className="text-blue-500 hover:text-blue-700">
+                <p className="text-gray-600">werta1064@gmail.com</p>
+                <a href="mailto:werta1064@gmail.com" className="text-blue-500 hover:text-blue-700">
                   Send an email
                 </a>
               </div>
@@ -84,10 +90,15 @@ const Contact = () => {
               </div>
               <div>
                 <h3 className="font-bold text-lg">Phone</h3>
-                <p className="text-gray-600">+123 456 7890</p>
-                <a href="tel:+1234567890" className="text-blue-500 hover:text-blue-700">
-                  Call me
-                </a>
+                <p className="text-gray-600">+20 10 6580 9310</p>
+                <div className="flex space-x-4 mt-1">
+                  <a href="tel:+201065809310" className="text-blue-500 hover:text-blue-700">
+                    Call me
+                  </a>
+                  <a href="https://wa.me/201065809310" target="_blank" rel="noopener noreferrer" className="text-green-500 hover:text-green-700">
+                    WhatsApp
+                  </a>
+                </div>
               </div>
             </div>
             
