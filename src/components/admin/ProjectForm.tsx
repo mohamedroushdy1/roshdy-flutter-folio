@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useProjects, Project } from "@/contexts/ProjectsContext";
@@ -136,23 +135,54 @@ const ProjectForm = () => {
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
       
+      // Set initial progress
+      setUploadProgress(prev => ({
+        ...prev,
+        [index]: 0
+      }));
+      
+      // Create a custom upload function to track progress
+      const trackProgress = () => {
+        // This is a workaround since onUploadProgress is not available
+        // We'll update progress at fixed intervals to simulate upload progress
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += 10;
+          if (progress > 90) {
+            clearInterval(interval);
+          }
+          setUploadProgress(prev => ({
+            ...prev,
+            [index]: progress
+          }));
+        }, 200);
+        
+        return () => clearInterval(interval);
+      };
+      
+      // Start tracking progress
+      const stopTracking = trackProgress();
+      
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
         .from('project_images')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false,
-          onUploadProgress: (progress) => {
-            setUploadProgress(prev => ({
-              ...prev,
-              [index]: Math.round((progress.loaded / progress.total) * 100)
-            }));
-          }
+          upsert: false
         });
+      
+      // Stop tracking progress once upload is complete
+      stopTracking();
       
       if (error) {
         throw error;
       }
+      
+      // Set progress to 100%
+      setUploadProgress(prev => ({
+        ...prev,
+        [index]: 100
+      }));
       
       // Get public URL for the uploaded file
       const { data: { publicUrl } } = supabase.storage
@@ -176,10 +206,13 @@ const ProjectForm = () => {
       });
     } finally {
       setIsUploading(false);
-      setUploadProgress(prev => ({
-        ...prev,
-        [index]: 0
-      }));
+      // Reset progress after a delay
+      setTimeout(() => {
+        setUploadProgress(prev => ({
+          ...prev,
+          [index]: 0
+        }));
+      }, 2000);
     }
   };
 
