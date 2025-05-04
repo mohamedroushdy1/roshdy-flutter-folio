@@ -13,6 +13,8 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { X } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { CarouselApi } from "@/components/ui/carousel";
 
 interface ProjectImageModalProps {
   open: boolean;
@@ -29,6 +31,18 @@ const ProjectImageModal = ({
   projectName,
   currentImageIndex = 0,
 }: ProjectImageModalProps) => {
+  const [api, setApi] = useState<CarouselApi>();
+
+  // Set the initial slide when the carousel API is available and currentImageIndex changes
+  useEffect(() => {
+    if (!api) return;
+    
+    // We need to use setTimeout to ensure the carousel has fully initialized
+    setTimeout(() => {
+      api.scrollTo(currentImageIndex);
+    }, 50);
+  }, [api, currentImageIndex, open]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-1">
@@ -41,7 +55,7 @@ const ProjectImageModal = ({
         <div className="p-1">
           <Carousel
             className="w-full"
-            defaultIndex={currentImageIndex}
+            setApi={setApi}
           >
             <CarouselContent>
               {images.map((image, i) => (
