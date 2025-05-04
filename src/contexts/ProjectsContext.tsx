@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,21 +26,20 @@ export interface Message {
 interface ProjectsContextType {
   projects: Project[];
   messages: Message[];
-  addProject: (project: Omit<Project, "id" | "createdAt">) => void;
-  updateProject: (id: string, project: Partial<Omit<Project, "id" | "createdAt">>) => void;
-  deleteProject: (id: string) => void;
-  addMessage: (message: Omit<Message, "id" | "read" | "createdAt">) => void;
-  markMessageAsRead: (id: string) => void;
-  deleteMessage: (id: string) => void;
+  addProject: (project: Omit<Project, "id" | "createdAt">) => Promise<void>;
+  updateProject: (id: string, project: Partial<Omit<Project, "id" | "createdAt">>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
+  addMessage: (message: Omit<Message, "id" | "read" | "createdAt">) => Promise<void>;
+  markMessageAsRead: (id: string) => Promise<void>;
+  deleteMessage: (id: string) => Promise<void>;
 }
 
-const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined);
+const ProjectsContext = createContext<ProjectsContextType | null>(null);
 
-export function ProjectsProvider({ children }: { children: React.ReactNode }) {
+export function ProjectsProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
 
-  // Load initial data
   useEffect(() => {
     loadProjects();
     loadMessages();
@@ -72,147 +71,137 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
     setMessages(data || []);
   };
 
-  const addProject = async (project: Omit<Project, "id" | "createdAt">) => {
-    const { data, error } = await supabase
-      .from('projects')
-      .insert([{ ...project, createdAt: new Date() }])
-      .select()
-      .single();
+  const value: ProjectsContextType = {
+    projects,
+    messages,
+    addProject: async (project) => {
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([{ ...project, createdAt: new Date() }])
+        .select()
+        .single();
 
-    if (error) {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error adding project",
+          description: error.message,
+        });
+        return;
+      }
+
+      setProjects([...projects, data]);
       toast({
-        variant: "destructive",
-        title: "Error adding project",
-        description: error.message,
+        title: "Project added",
+        description: `${project.name} has been added to your portfolio.`,
       });
-      return;
-    }
+    },
+    updateProject: async (id, project) => {
+      const { error } = await supabase
+        .from('projects')
+        .update(project)
+        .eq('id', id);
 
-    setProjects([...projects, data]);
-    toast({
-      title: "Project added",
-      description: `${project.name} has been added to your portfolio.`,
-    });
-  };
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error updating project",
+          description: error.message,
+        });
+        return;
+      }
 
-  const updateProject = async (id: string, project: Partial<Omit<Project, "id" | "createdAt">>) => {
-    const { error } = await supabase
-      .from('projects')
-      .update(project)
-      .eq('id', id);
-
-    if (error) {
+      setProjects(projects.map(p => p.id === id ? { ...p, ...project } : p));
       toast({
-        variant: "destructive",
-        title: "Error updating project",
-        description: error.message,
+        title: "Project updated",
+        description: "The project has been updated successfully.",
       });
-      return;
-    }
+    },
+    deleteProject: async (id) => {
+      const { error } = await supabase
+        .from('projects')
+        .delete()
+        .eq('id', id);
 
-    setProjects(projects.map(p => p.id === id ? { ...p, ...project } : p));
-    toast({
-      title: "Project updated",
-      description: "The project has been updated successfully.",
-    });
-  };
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error deleting project",
+          description: error.message,
+        });
+        return;
+      }
 
-  const deleteProject = async (id: string) => {
-    const { error } = await supabase
-      .from('projects')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
+      setProjects(projects.filter(p => p.id !== id));
       toast({
-        variant: "destructive",
-        title: "Error deleting project",
-        description: error.message,
+        title: "Project deleted",
+        description: "The project has been removed from your portfolio.",
       });
-      return;
-    }
+    },
+    addMessage: async (message) => {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert([{ ...message, read: false, createdAt: new Date() }])
+        .select()
+        .single();
 
-    setProjects(projects.filter(p => p.id !== id));
-    toast({
-      title: "Project deleted",
-      description: "The project has been removed from your portfolio.",
-    });
-  };
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error sending message",
+          description: error.message,
+        });
+        return;
+      }
 
-  const addMessage = async (message: Omit<Message, "id" | "read" | "createdAt">) => {
-    const { data, error } = await supabase
-      .from('messages')
-      .insert([{ ...message, read: false, createdAt: new Date() }])
-      .select()
-      .single();
-
-    if (error) {
+      setMessages([...messages, data]);
       toast({
-        variant: "destructive",
-        title: "Error sending message",
-        description: error.message,
+        title: "Message sent",
+        description: "Your message has been sent successfully!",
       });
-      return;
-    }
+    },
+    markMessageAsRead: async (id) => {
+      const { error } = await supabase
+        .from('messages')
+        .update({ read: true })
+        .eq('id', id);
 
-    setMessages([...messages, data]);
-    toast({
-      title: "Message sent",
-      description: "Your message has been sent successfully!",
-    });
-  };
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error updating message",
+          description: error.message,
+        });
+        return;
+      }
 
-  const markMessageAsRead = async (id: string) => {
-    const { error } = await supabase
-      .from('messages')
-      .update({ read: true })
-      .eq('id', id);
+      setMessages(messages.map(m => m.id === id ? { ...m, read: true } : m));
+    },
+    deleteMessage: async (id) => {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', id);
 
-    if (error) {
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Error deleting message",
+          description: error.message,
+        });
+        return;
+      }
+
+      setMessages(messages.filter(m => m.id !== id));
       toast({
-        variant: "destructive",
-        title: "Error updating message",
-        description: error.message,
+        title: "Message deleted",
+        description: "The message has been deleted.",
       });
-      return;
     }
-
-    setMessages(messages.map(m => m.id === id ? { ...m, read: true } : m));
-  };
-
-  const deleteMessage = async (id: string) => {
-    const { error } = await supabase
-      .from('messages')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast({
-        variant: "destructive",
-        title: "Error deleting message",
-        description: error.message,
-      });
-      return;
-    }
-
-    setMessages(messages.filter(m => m.id !== id));
-    toast({
-      title: "Message deleted",
-      description: "The message has been deleted.",
-    });
   };
 
   return (
-    <ProjectsContext.Provider value={{ 
-      projects, 
-      messages, 
-      addProject, 
-      updateProject, 
-      deleteProject, 
-      addMessage, 
-      markMessageAsRead, 
-      deleteMessage 
-    }}>
+    <ProjectsContext.Provider value={value}>
       {children}
     </ProjectsContext.Provider>
   );
@@ -220,7 +209,7 @@ export function ProjectsProvider({ children }: { children: React.ReactNode }) {
 
 export function useProjects() {
   const context = useContext(ProjectsContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useProjects must be used within a ProjectsProvider");
   }
   return context;
