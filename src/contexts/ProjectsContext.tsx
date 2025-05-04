@@ -1,6 +1,7 @@
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Project {
   id: string;
@@ -35,143 +36,165 @@ interface ProjectsContextType {
 
 const ProjectsContext = createContext<ProjectsContextType | undefined>(undefined);
 
-// Sample data for initial demo
-const sampleProjects: Project[] = [
-  {
-    id: "1",
-    name: "FlutterChat",
-    description: "A real-time messaging app built with Flutter and Firebase, featuring read receipts and media sharing.",
-    technologies: ["Flutter", "Dart", "Firebase", "GetX"],
-    images: [
-      "https://images.unsplash.com/photo-1617040619263-41c5a9ca7521?q=80&w=1470&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1620843437920-ead942b3b8c1?q=80&w=1374&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?q=80&w=1470&auto=format&fit=crop"
-    ],
-    downloadLink: "https://example.com/download",
-    featured: true,
-    createdAt: new Date(2023, 5, 15)
-  },
-  {
-    id: "2",
-    name: "TaskMaster Pro",
-    description: "A productivity app with task management, reminders, and synchronization across devices.",
-    technologies: ["Flutter", "Dart", "SQLite", "Provider"],
-    images: [
-      "https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=1470&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1470&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=1470&auto=format&fit=crop"
-    ],
-    downloadLink: "https://example.com/download",
-    featured: false,
-    createdAt: new Date(2023, 2, 10)
-  },
-  {
-    id: "3",
-    name: "FitTracker",
-    description: "A fitness tracking application with workout plans, progress tracking, and health metrics.",
-    technologies: ["Flutter", "Dart", "Hive", "Bloc"],
-    images: [
-      "https://images.unsplash.com/photo-1540563575233-566677cbdd99?q=80&w=1374&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?q=80&w=1374&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1611095973763-414019e72400?q=80&w=1471&auto=format&fit=crop"
-    ],
-    downloadLink: "https://example.com/download",
-    featured: true,
-    createdAt: new Date(2023, 8, 22)
-  }
-];
-
-const sampleMessages: Message[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    content: "Hi, I'm interested in hiring you for a Flutter project. Can we discuss details?",
-    read: false,
-    createdAt: new Date(2023, 9, 25)
-  },
-  {
-    id: "2",
-    name: "Sarah Smith",
-    email: "sarah@example.com",
-    content: "I saw your TaskMaster app and was wondering if you're available for freelance work.",
-    read: true,
-    createdAt: new Date(2023, 9, 20)
-  }
-];
-
 export function ProjectsProvider({ children }: { children: React.ReactNode }) {
-  const [projects, setProjects] = useState<Project[]>(() => {
-    const storedProjects = localStorage.getItem("projects");
-    return storedProjects ? JSON.parse(storedProjects) : sampleProjects;
-  });
-  
-  const [messages, setMessages] = useState<Message[]>(() => {
-    const storedMessages = localStorage.getItem("messages");
-    return storedMessages ? JSON.parse(storedMessages) : sampleMessages;
-  });
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
-  // Update localStorage when projects or messages change
+  // Load initial data
   useEffect(() => {
-    localStorage.setItem("projects", JSON.stringify(projects));
-  }, [projects]);
+    loadProjects();
+    loadMessages();
+  }, []);
 
-  useEffect(() => {
-    localStorage.setItem("messages", JSON.stringify(messages));
-  }, [messages]);
+  const loadProjects = async () => {
+    const { data, error } = await supabase.from('projects').select('*');
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error loading projects",
+        description: error.message,
+      });
+      return;
+    }
+    setProjects(data || []);
+  };
 
-  const addProject = (project: Omit<Project, "id" | "createdAt">) => {
-    const newProject = {
-      ...project,
-      id: Date.now().toString(),
-      createdAt: new Date()
-    };
-    setProjects([...projects, newProject]);
+  const loadMessages = async () => {
+    const { data, error } = await supabase.from('messages').select('*');
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error loading messages",
+        description: error.message,
+      });
+      return;
+    }
+    setMessages(data || []);
+  };
+
+  const addProject = async (project: Omit<Project, "id" | "createdAt">) => {
+    const { data, error } = await supabase
+      .from('projects')
+      .insert([{ ...project, createdAt: new Date() }])
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error adding project",
+        description: error.message,
+      });
+      return;
+    }
+
+    setProjects([...projects, data]);
     toast({
       title: "Project added",
       description: `${project.name} has been added to your portfolio.`,
     });
   };
 
-  const updateProject = (id: string, project: Partial<Omit<Project, "id" | "createdAt">>) => {
-    setProjects(projects.map(p => 
-      p.id === id ? { ...p, ...project } : p
-    ));
+  const updateProject = async (id: string, project: Partial<Omit<Project, "id" | "createdAt">>) => {
+    const { error } = await supabase
+      .from('projects')
+      .update(project)
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error updating project",
+        description: error.message,
+      });
+      return;
+    }
+
+    setProjects(projects.map(p => p.id === id ? { ...p, ...project } : p));
     toast({
       title: "Project updated",
-      description: `The project has been updated successfully.`,
+      description: "The project has been updated successfully.",
     });
   };
 
-  const deleteProject = (id: string) => {
+  const deleteProject = async (id: string) => {
+    const { error } = await supabase
+      .from('projects')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error deleting project",
+        description: error.message,
+      });
+      return;
+    }
+
     setProjects(projects.filter(p => p.id !== id));
     toast({
       title: "Project deleted",
-      description: `The project has been removed from your portfolio.`,
+      description: "The project has been removed from your portfolio.",
     });
   };
 
-  const addMessage = (message: Omit<Message, "id" | "read" | "createdAt">) => {
-    const newMessage = {
-      ...message,
-      id: Date.now().toString(),
-      read: false,
-      createdAt: new Date()
-    };
-    setMessages([...messages, newMessage]);
+  const addMessage = async (message: Omit<Message, "id" | "read" | "createdAt">) => {
+    const { data, error } = await supabase
+      .from('messages')
+      .insert([{ ...message, read: false, createdAt: new Date() }])
+      .select()
+      .single();
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error sending message",
+        description: error.message,
+      });
+      return;
+    }
+
+    setMessages([...messages, data]);
     toast({
       title: "Message sent",
       description: "Your message has been sent successfully!",
     });
   };
 
-  const markMessageAsRead = (id: string) => {
-    setMessages(messages.map(m => 
-      m.id === id ? { ...m, read: true } : m
-    ));
+  const markMessageAsRead = async (id: string) => {
+    const { error } = await supabase
+      .from('messages')
+      .update({ read: true })
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error updating message",
+        description: error.message,
+      });
+      return;
+    }
+
+    setMessages(messages.map(m => m.id === id ? { ...m, read: true } : m));
   };
 
-  const deleteMessage = (id: string) => {
+  const deleteMessage = async (id: string) => {
+    const { error } = await supabase
+      .from('messages')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      toast({
+        variant: "destructive",
+        title: "Error deleting message",
+        description: error.message,
+      });
+      return;
+    }
+
     setMessages(messages.filter(m => m.id !== id));
     toast({
       title: "Message deleted",
