@@ -11,7 +11,7 @@ export interface Project {
   images: string[];
   downloadLink: string;
   featured: boolean;
-  createdAt: Date;
+  created_at: Date;
 }
 
 export interface Message {
@@ -77,7 +77,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     addProject: async (project) => {
       const { data, error } = await supabase
         .from('projects')
-        .insert([{ ...project, createdAt: new Date() }])
+        .insert([{ ...project, created_at: new Date() }])
         .select()
         .single();
 
