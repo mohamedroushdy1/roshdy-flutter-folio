@@ -46,7 +46,7 @@ const Hero = () => {
             <div className="w-72 h-72 md:w-96 md:h-96 bg-blue-500 rounded-full opacity-10 absolute -top-10 -right-10"></div>
             <div className="w-full aspect-square max-w-md mx-auto relative overflow-hidden rounded-3xl shadow-2xl border-8 border-white">
               <img 
-                src="/placeholder.svg"
+                src="https://images.unsplash.com/photo-1618761714954-0b8cd0026356?q=80&w=1470&auto=format&fit=crop"
                 alt="Mohamed Roshdy - Flutter Developer"
                 className="w-full h-full object-cover object-center"
               />

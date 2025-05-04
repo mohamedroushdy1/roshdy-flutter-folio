@@ -42,7 +42,11 @@ const sampleProjects: Project[] = [
     name: "FlutterChat",
     description: "A real-time messaging app built with Flutter and Firebase, featuring read receipts and media sharing.",
     technologies: ["Flutter", "Dart", "Firebase", "GetX"],
-    images: ["/placeholder.svg", "/placeholder.svg"],
+    images: [
+      "https://images.unsplash.com/photo-1617040619263-41c5a9ca7521?q=80&w=1470&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1620843437920-ead942b3b8c1?q=80&w=1374&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1555774698-0b77e0d5fac6?q=80&w=1470&auto=format&fit=crop"
+    ],
     downloadLink: "https://example.com/download",
     featured: true,
     createdAt: new Date(2023, 5, 15)
@@ -52,7 +56,11 @@ const sampleProjects: Project[] = [
     name: "TaskMaster Pro",
     description: "A productivity app with task management, reminders, and synchronization across devices.",
     technologies: ["Flutter", "Dart", "SQLite", "Provider"],
-    images: ["/placeholder.svg", "/placeholder.svg"],
+    images: [
+      "https://images.unsplash.com/photo-1531403009284-440f080d1e12?q=80&w=1470&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=1470&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?q=80&w=1470&auto=format&fit=crop"
+    ],
     downloadLink: "https://example.com/download",
     featured: false,
     createdAt: new Date(2023, 2, 10)
@@ -62,7 +70,11 @@ const sampleProjects: Project[] = [
     name: "FitTracker",
     description: "A fitness tracking application with workout plans, progress tracking, and health metrics.",
     technologies: ["Flutter", "Dart", "Hive", "Bloc"],
-    images: ["/placeholder.svg", "/placeholder.svg"],
+    images: [
+      "https://images.unsplash.com/photo-1540563575233-566677cbdd99?q=80&w=1374&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?q=80&w=1374&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1611095973763-414019e72400?q=80&w=1471&auto=format&fit=crop"
+    ],
     downloadLink: "https://example.com/download",
     featured: true,
     createdAt: new Date(2023, 8, 22)
