@@ -129,6 +129,7 @@ const ProjectForm = () => {
     
     try {
       setIsUploading(true);
+      console.log('Starting file upload:', file.name);
       
       // Create a unique file name
       const fileExt = file.name.split('.').pop();
@@ -143,8 +144,6 @@ const ProjectForm = () => {
       
       // Create a custom upload function to track progress
       const trackProgress = () => {
-        // This is a workaround since onUploadProgress is not available
-        // We'll update progress at fixed intervals to simulate upload progress
         let progress = 0;
         const interval = setInterval(() => {
           progress += 10;
@@ -163,20 +162,25 @@ const ProjectForm = () => {
       // Start tracking progress
       const stopTracking = trackProgress();
       
+      console.log('Uploading to Supabase storage:', filePath);
+      
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
         .from('project_images')
         .upload(filePath, file, {
           cacheControl: '3600',
-          upsert: false
+          upsert: true
         });
       
       // Stop tracking progress once upload is complete
       stopTracking();
       
       if (error) {
+        console.error('Error response from Supabase:', error);
         throw error;
       }
+      
+      console.log('Upload successful, data:', data);
       
       // Set progress to 100%
       setUploadProgress(prev => ({
@@ -188,6 +192,8 @@ const ProjectForm = () => {
       const { data: { publicUrl } } = supabase.storage
         .from('project_images')
         .getPublicUrl(filePath);
+      
+      console.log('Public URL generated:', publicUrl);
       
       // Update image URL in form data
       handleImageChange(index, publicUrl);
