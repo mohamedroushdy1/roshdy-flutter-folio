@@ -9,7 +9,7 @@ export interface Project {
   description: string;
   technologies: string[];
   images: string[];
-  downloadLink: string;
+  download_link: string;
   featured: boolean;
   created_at: Date;
 }
@@ -77,7 +77,11 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     addProject: async (project) => {
       const { data, error } = await supabase
         .from('projects')
-        .insert([{ ...project, created_at: new Date() }])
+        .insert([{ 
+          ...project, 
+          download_link: project.download_link,
+          created_at: new Date() 
+        }])
         .select()
         .single();
 
