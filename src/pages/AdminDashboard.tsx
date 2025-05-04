@@ -8,6 +8,7 @@ import DashboardOverview from "@/components/admin/DashboardOverview";
 import ProjectsList from "@/components/admin/ProjectsList";
 import ProjectForm from "@/components/admin/ProjectForm";
 import MessagesList from "@/components/admin/MessagesList";
+import AccountSettings from "@/components/admin/AccountSettings";
 
 const AdminDashboard = () => {
   const { isAuthenticated, isLoading } = useAuth();
@@ -44,6 +45,7 @@ const AdminDashboard = () => {
             <Route path="/projects/new" element={<ProjectForm />} />
             <Route path="/projects/edit/:id" element={<ProjectForm />} />
             <Route path="/messages" element={<MessagesList />} />
+            <Route path="/account" element={<AccountSettings />} />
             <Route path="*" element={<Navigate to="/admin/dashboard" />} />
           </Routes>
         </main>

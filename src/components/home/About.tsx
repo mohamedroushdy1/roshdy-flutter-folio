@@ -25,8 +25,8 @@ const About = () => {
           <div className="lg:w-1/2 relative">
             <div className="w-full max-w-md mx-auto aspect-square rounded-2xl overflow-hidden shadow-xl">
               <img 
-                src="/placeholder.svg"
-                alt="Mohamed Roshdy" 
+                src="https://images.unsplash.com/photo-1607990281513-2c110a25bd8c?q=80&w=1634&auto=format&fit=crop"
+                alt="Mobile App Developer" 
                 className="w-full h-full object-cover"
               />
             </div>

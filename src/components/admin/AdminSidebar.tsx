@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, FolderPlus, MessageSquare, LogOut, User } from "lucide-react";
+import { LayoutDashboard, FolderPlus, MessageSquare, LogOut, User, Settings } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const AdminSidebar = () => {
@@ -26,6 +26,11 @@ const AdminSidebar = () => {
       title: "Messages",
       path: "/admin/dashboard/messages",
       icon: <MessageSquare className="h-5 w-5" />,
+    },
+    {
+      title: "Account",
+      path: "/admin/dashboard/account",
+      icon: <Settings className="h-5 w-5" />,
     },
   ];
 

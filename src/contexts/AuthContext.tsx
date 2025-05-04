@@ -30,9 +30,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      // For demo purposes we're using a hardcoded admin credential
-      // In a real app, this would validate against a backend
-      if (email === "admin@example.com" && password === "password") {
+      // Get stored admin credentials or use defaults
+      const storedEmail = localStorage.getItem("admin_email") || "admin@example.com";
+      const storedPassword = localStorage.getItem("admin_password") || "password";
+      
+      // Check if credentials match
+      if (email === storedEmail && password === storedPassword) {
         localStorage.setItem("auth_token", "demo_token");
         setIsAuthenticated(true);
         toast({
@@ -41,6 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         return true;
       }
+      
       toast({
         variant: "destructive",
         title: "Login failed",

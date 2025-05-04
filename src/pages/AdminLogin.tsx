@@ -78,7 +78,7 @@ const AdminLogin = () => {
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="admin@example.com"
+                  placeholder="Enter your email"
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -93,7 +93,7 @@ const AdminLogin = () => {
                   id="password"
                   name="password"
                   type="password"
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
                   required
@@ -108,12 +108,6 @@ const AdminLogin = () => {
                 >
                   {isSubmitting ? "Logging in..." : "Login"}
                 </Button>
-              </div>
-              
-              <div className="text-center text-sm text-gray-500 mt-4">
-                <p>Demo credentials:</p>
-                <p>Email: admin@example.com</p>
-                <p>Password: password</p>
               </div>
             </form>
           </CardContent>
