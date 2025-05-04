@@ -20,7 +20,7 @@ export interface Message {
   email: string;
   content: string;
   read: boolean;
-  createdAt: Date;
+  created_at: Date;
 }
 
 interface ProjectsContextType {
@@ -141,7 +141,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     addMessage: async (message) => {
       const { data, error } = await supabase
         .from('messages')
-        .insert([{ ...message, read: false, createdAt: new Date() }])
+        .insert([{ ...message, read: false, created_at: new Date() }])
         .select()
         .single();
 
